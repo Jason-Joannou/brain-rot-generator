@@ -1,2 +1,4 @@
 moviepy
 gtts
+dotenv
+google
