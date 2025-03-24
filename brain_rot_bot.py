@@ -55,9 +55,9 @@ class BrainRotBot:
         # Create a model instance directly from the genai module
         model = genai.GenerativeModel('gemini-2.0-flash')
         prompt = (
-            f"Create an engaging and captivating script for a TikTok video about {self.selected_topic}. "
+            f"Create an engaging and captivating script which you will narate for a TikTok video about {self.selected_topic}. "
             f"The target audience is young adults aged 18-30 who are interested in {self.selected_topic}. "
-            f"The script should be concise, entertaining, informative, and exactly a minute long - aiming to capture attention within the first few seconds. "
+            f"The naration should be concise, entertaining, informative, and exactly a minute long - aiming to capture attention within the first few seconds. "
             f"Include a call to action to encourage viewers to like, comment, and share the video."
         )
         response = model.generate_content(prompt)
