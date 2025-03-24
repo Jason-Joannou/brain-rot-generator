@@ -3,8 +3,8 @@ import random
 import os
 from datetime import datetime
 from dotenv import load_dotenv
-from google import genai
-from moviepy import VideoFileClip, AudioFileClip, TextClip, CompositeVideoClip
+import google.generativeai as genai
+from moviepy import VideoFileClip, AudioFileClip, TextClip, CompositeVideoClip, CompositeAudioClip
 from gtts import gTTS
 import argparse  # Add this for CLI support
 
@@ -16,7 +16,7 @@ class BrainRotBot:
         self.topics = self._load_topics_from_json()
         self.selected_video = self._load_background_video()
         self.selected_topic = self._load_selected_topic()
-        self.genai_client = self._load_genai_client()
+        self._configure_genai()
 
     def _load_topics_from_json(self):
         try:
@@ -29,7 +29,7 @@ class BrainRotBot:
         
     def _load_background_video(self):
         # Define base videos
-        base_videos = ['video1.mp4', 'video2.mp4', 'video3.mp4']
+        base_videos = ['./videos/subway_surfer.mp4']
 
         # Select a video
         selected_video = random.choice(base_videos)
@@ -40,20 +40,24 @@ class BrainRotBot:
         selected_topic = random.choice(self.topics.get(current_day, []))
         return selected_topic
     
-    def _load_genai_client(self):
+    def _configure_genai(self):
+        # Configure the genai module with your API key
         try:
-            client = genai.Client(api_key=os.getenv('GEMINI_API_KEY'))
-            return client
+            api_key = os.getenv('GEMINI_API_KEY')
+            if not api_key:
+                raise ValueError("GEMINI_API_KEY environment variable is not set")
+            genai.configure(api_key=api_key)
         except Exception as e:
-            print(f"Error: {e}")
-            raise Exception("There is no GEMINI_API_KEY")
+            print(f"Error configuring Gemini API: {e}")
+            raise
         
     def generate_content(self):
-        model = self.genai_client.GenerativeModel('gemini-pro')
+        # Create a model instance directly from the genai module
+        model = genai.GenerativeModel('gemini-2.0-flash')
         prompt = (
             f"Create an engaging and captivating script for a TikTok video about {self.selected_topic}. "
             f"The target audience is young adults aged 18-30 who are interested in {self.selected_topic}. "
-            f"The script should be concise, entertaining, and informative, aiming to capture attention within the first few seconds. "
+            f"The script should be concise, entertaining, informative, and exactly a minute long - aiming to capture attention within the first few seconds. "
             f"Include a call to action to encourage viewers to like, comment, and share the video."
         )
         response = model.generate_content(prompt)
@@ -72,12 +76,13 @@ class BrainRotBot:
         
         video_clip = VideoFileClip(self.selected_video)
         audio_clip = AudioFileClip(audio_file)
-        video_with_audio = video_clip.set_audio(audio_clip)
+        new_audio_clip = CompositeAudioClip([audio_clip])
+        video_clip.audio = new_audio_clip
+        font = os.getenv('FONT_FILE')
+        text_clip = TextClip(font=font, text=text, font_size=24, color='white', bg_color='black', size=video_clip.size, duration=video_clip.duration, method='caption')
+        # text_clip = text_clip.set_position('bottom').set_duration(video_clip.duration)
 
-        text_clip = TextClip(text, fontsize=24, color='white', bg_color='black', size=video_clip.size)
-        text_clip = text_clip.set_position('bottom').set_duration(video_clip.duration)
-
-        final_clip = CompositeVideoClip([video_with_audio, text_clip])
+        final_clip = CompositeVideoClip([video_clip, text_clip])
 
         output_path = 'upload/final_video_with_text.mp4'
         final_clip.write_videofile(output_path, codec='libx264')

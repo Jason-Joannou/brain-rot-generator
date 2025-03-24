@@ -1,0 +1,21 @@
+version: '3'
+
+tasks:
+  generate:
+    desc: Generate a TikTok video with default settings (current day and random topic)
+    cmds:
+      - python brain_rot_bot.py
+
+  generate-day:
+    desc: Generate a TikTok video for a specific day
+    cmds:
+      - python brain_rot_bot.py --day {{.DAY}}
+    vars:
+      DAY: '{{.DAY | default "Monday"}}'
+
+  generate-topic:
+    desc: Generate a TikTok video for a specific topic
+    cmds:
+      - python brain_rot_bot.py --topic "{{.TOPIC}}"
+    requires:
+      vars: [TOPIC]
